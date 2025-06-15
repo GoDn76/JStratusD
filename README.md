@@ -10,18 +10,25 @@ vercel-clone/
 │   ├── pom.xml
 │   └── src/
 │       ├── main/
-│       │   ├── java/com/vercel/upload/
-│       │   │   ├── UploadServiceApplication.java
-│       │   │   ├── controller/UploadController.java
-│       │   │   ├── service/UploadService.java
-│       │   │   ├── dto/
-│       │   │   │   ├── UploadRequestDTO.java
+│       │   ├── java/org/godn/verceluploadservice/
+│       │   │   ├── VercelUploadServiceApplication.java
+│       │   │   ├── upload/
+|       |   |   |   ├── UploadController.java
+|       |   |   |   ├── UploadService.java
+|       │   │   │   ├── UploadRequestDTO.java
 │       │   │   │   └── UploadResponseDTO.java
-│       │   │   ├── config/CorsConfig.java
-│       │   │   ├── util/StorageUtil.java
+│       │   │   ├── config/
+|       │   │   │   ├── AsyncConfig.java
+│       │   │   │   └── CorsConfig.java
+│       │   │   ├── util/
+|       │   │   │   ├── GeneratedId.java
+│       │   │   │   └── GetAllFiles.java
 │       │   │   ├── exception/
 │       │   │   │   ├── CustomException.java
 │       │   │   │   └── GlobalExceptionHandler.java
+│       │   │   ├── storage/
+│       │   │   │   ├── S3Properties.java
+│       │   │   │   └── S3UploadService.java
 │       │   └── resources/application.properties
 │       └── test/java/com/vercel/upload/UploadServiceApplicationTests.java
 
