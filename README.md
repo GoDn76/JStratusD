@@ -30,7 +30,7 @@ vercel-clone/
 │       │   │   │   ├── S3Properties.java
 │       │   │   │   └── S3UploadService.java
 │       │   └── resources/application.properties
-│       └── test/java/com/vercel/upload/UploadServiceApplicationTests.java
+│       └── test/java/com/vercel/upload/VercelUploadServiceApplicationTests.java
 
 ├── deploy-service/
 │   ├── pom.xml

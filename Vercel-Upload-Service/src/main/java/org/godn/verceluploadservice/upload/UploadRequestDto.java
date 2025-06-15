@@ -1,12 +1,16 @@
 package org.godn.verceluploadservice.upload;
+import org.hibernate.validator.constraints.URL;
 
-public class UploadDto {
+public class UploadRequestDto {
+
+//    @NotEmpty(message = "Repository URL cannot be empty")
+    @URL(message = "Invalid URL format")
     private String repoUrl;
 
-    public UploadDto() {
+    public UploadRequestDto() {
     }
 
-    public UploadDto(String repoUrl) {
+    public UploadRequestDto(String repoUrl) {
         this.repoUrl = repoUrl;
     }
 
