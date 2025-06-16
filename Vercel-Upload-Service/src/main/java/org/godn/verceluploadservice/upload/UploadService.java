@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -37,13 +38,6 @@ public class UploadService {
     public CompletableFuture<UploadResponseDto> uploadRepo(UploadRequestDto uploadRequestDto) {
         String repoUrl = uploadRequestDto.getRepoUrl();
 
-        if (repoUrl == null || !repoUrl.startsWith("https://")) {
-            String msg = "Invalid repository URL";
-            logger.warn("{}: {}", msg, repoUrl);
-            return CompletableFuture.completedFuture(new UploadResponseDto(false, msg, null));
-        }
-
-
         logger.info("Uploading repository URL: {}", repoUrl);
 
 
@@ -55,6 +49,8 @@ public class UploadService {
         Path targetPath = Paths.get(currentDir, outputDir);
 
         File targetDir = new File(targetPath.toString(), uploadId);
+
+
         if (!targetDir.getAbsolutePath().startsWith(new File(outputDir).getAbsolutePath())) {
             msg = "Invalid upload ID or output directory";
             logger.error(msg);
@@ -99,7 +95,7 @@ public class UploadService {
                                     logger.error("Error during file upload to R2 for '{}'", file, e);
                                     return null;
                                 });
-                    }).filter(future -> future != null)
+                    }).filter(Objects::nonNull)
                     .toList();
 
             CompletableFuture<Void> allUploads = CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[0]));
@@ -109,6 +105,9 @@ public class UploadService {
 
             // Add upload ID to Redis queue
             redisQueueService.pushToQueue(uploadId);
+            logger.info("Upload ID '{}' added to Redis queue", uploadId);
+
+
         }catch(GitAPIException e){
             msg = "Failed to upload repository: " + e.getMessage();
             logger.error(msg, e);
