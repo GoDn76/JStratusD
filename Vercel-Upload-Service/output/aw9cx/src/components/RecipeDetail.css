@@ -1,0 +1,343 @@
+.recipe-detail {
+  padding: 24px 0;
+}
+
+.recipe-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.recipe-hero {
+  margin-bottom: 40px;
+}
+
+.hero-image {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 40px;
+  color: var(--white);
+}
+
+.hero-overlay h1 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.hero-overlay p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.recipe-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.difficulty-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recipe-main {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 48px;
+}
+
+.ingredients-section,
+.instructions-section {
+  background-color: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.ingredients-section h2,
+.instructions-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+}
+
+.section-description {
+  color: var(--gray-600);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100px;
+  padding: 4px;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.ingredients-list.dragging-over {
+  background-color: rgb(249 115 22 / 0.05);
+  border: 2px dashed var(--primary);
+}
+
+.ingredient-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.ingredient-card:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.ingredient-card.completed {
+  background-color: rgb(16 185 129 / 0.1);
+  border-color: var(--secondary);
+  opacity: 0.7;
+}
+
+.ingredient-card.completed .ingredient-text {
+  text-decoration: line-through;
+}
+
+.ingredient-card.dragging {
+  box-shadow: var(--shadow-lg);
+  transform: rotate(2deg);
+  background-color: var(--white);
+  border-color: var(--primary);
+}
+
+.ingredient-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-300);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--secondary);
+  font-weight: 700;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.ingredient-card.completed .ingredient-checkbox {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--white);
+}
+
+.ingredient-text {
+  flex: 1;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.drag-handle {
+  color: var(--gray-400);
+  font-size: 12px;
+  cursor: grab;
+  padding: 4px;
+  border-radius: 2px;
+  transition: var(--transition);
+}
+
+.drag-handle:hover {
+  color: var(--gray-600);
+  background-color: var(--gray-200);
+}
+
+.instructions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.instruction-card {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.instruction-card:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.instruction-card.active {
+  background-color: rgb(249 115 22 / 0.05);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 0.1);
+}
+
+.instruction-number {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.instruction-content {
+  flex: 1;
+}
+
+.instruction-content p {
+  color: var(--gray-800);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.instruction-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.voice-btn {
+  background-color: var(--gray-200);
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  color: var(--gray-600);
+}
+
+.voice-btn:hover {
+  background-color: var(--primary);
+  color: var(--white);
+  transform: scale(1.1);
+}
+
+@media (max-width: 1024px) {
+  .recipe-main {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .hero-overlay {
+    padding: 24px;
+  }
+  
+  .hero-overlay h1 {
+    font-size: 28px;
+  }
+  
+  .ingredients-section,
+  .instructions-section {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .recipe-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .header-actions {
+    justify-content: stretch;
+  }
+  
+  .hero-image {
+    height: 250px;
+  }
+  
+  .hero-overlay {
+    padding: 20px;
+  }
+  
+  .hero-overlay h1 {
+    font-size: 24px;
+  }
+  
+  .recipe-meta {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .ingredients-section,
+  .instructions-section {
+    padding: 20px;
+  }
+  
+  .instruction-card {
+    padding: 20px;
+  }
+  
+  .instruction-number {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}
