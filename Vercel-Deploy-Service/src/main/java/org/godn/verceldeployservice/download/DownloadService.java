@@ -5,11 +5,9 @@ import org.godn.verceldeployservice.storage.S3DownloadService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -21,9 +19,6 @@ public class DownloadService {
     private static final Logger logger = LoggerFactory.getLogger(DownloadService.class);
     private final S3DownloadService s3DownloadService;
 
-    @Value("${download.output.dir}")
-    private String distDir;
-
     public DownloadService(S3DownloadService s3DownloadService) {
         this.s3DownloadService = s3DownloadService;
     }
@@ -31,11 +26,10 @@ public class DownloadService {
     @Async
     public CompletableFuture<Void> downloadR2Folder(String uploadId) {
         logger.info("Starting download for upload ID: {}", uploadId);
-        String msg;
 
-        Path baseDir = Paths.get(System.getProperty("user.dir"), distDir, uploadId);
+        Path baseDir = Paths.get(System.getProperty("user.dir"));
 
-        logger.info("Downloading Files to : {}", baseDir.getParent().toString());
+        logger.info("Downloading Files to : {}", baseDir);
 
         List<CompletableFuture<?>> futures = new ArrayList<>();
         List<String> fileNames = s3DownloadService.listObjectKeys("output/"+uploadId);
