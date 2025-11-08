@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Vercel-Upload-Service/Vercel-Upload-Service.iml" filepath="$PROJECT_DIR$/Vercel-Upload-Service/Vercel-Upload-Service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Vercel-Clone.iml" filepath="$PROJECT_DIR$/.idea/Vercel-Clone.iml" />
     </modules>
   </component>
 </project>
