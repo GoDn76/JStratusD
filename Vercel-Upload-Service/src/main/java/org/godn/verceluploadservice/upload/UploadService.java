@@ -167,6 +167,7 @@ public class UploadService {
                         }
                     }
                 }
+
                 // Verify deletion
                 if (!Files.exists(dirPath)) {
                     logger.info("Successfully deleted directory: {}", dirPath);
