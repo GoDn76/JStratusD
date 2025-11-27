@@ -1,0 +1,43 @@
+src/
+└── main/
+    ├── resources/
+    │   └── application.yml              <-- DB, Redis, S3 Credentials
+    │
+    └── java/
+        └── org/
+            └── godn/
+                └── uploadservice/
+                    │
+                    ├── VercelUploadServiceApplication.java  <-- Main Entry Point
+                    │
+                    ├── config/                  <-- Global Configuration
+                    │   ├── AppConfig.java       (Beans, RestTemplate, etc.)
+                    │   └── AsyncConfig.java     (If using @Async for uploads)
+                    │
+                    ├── deployment/              <-- DOMAIN FEATURE (The Core Resource)
+                    │   ├── Deployment.java           (JPA Entity)
+                    │   ├── DeploymentStatus.java     (Enum: QUEUED, BUILDING...)
+                    │   ├── DeploymentRepository.java (DB Queries)
+                    │   ├── DeploymentService.java    (Business Logic: DB, Limits, Cancel)
+                    │   └── DeploymentController.java (API Endpoints: POST, GET, DELETE)
+                    │
+                    ├── upload/                  <-- ACTION FEATURE (The "Work")
+                    │   ├── UploadService.java        (Orchestrator: Calls Git -> S3 -> Redis)
+                    │   ├── UploadRequestDto.java     (Input: repoUrl)
+                    │   └── UploadResponseDto.java    (Output: id, status)
+                    │
+                    ├── git/                     <-- INFRASTRUCTURE (Git)
+                    │   └── GitService.java           (Wrapper for JGit / ProcessBuilder)
+                    │
+                    ├── queue/                   <-- INFRASTRUCTURE (Redis)
+                    │   └── RedisQueueService.java    (Pushing IDs to the queue)
+                    │
+                    ├── storage/                 <-- INFRASTRUCTURE (S3/R2)
+                    │   ├── S3Properties.java         (Config mapping)
+                    │   └── S3UploadService.java      (Uploading files to R2)
+                    │
+                    └── exception/               <-- GLOBAL ERROR HANDLING
+                        ├── GlobalExceptionHandler.java
+                        ├── BadRequestException.java
+                        ├── ResourceNotFoundException.java
+                        └── UnauthorizedException.java

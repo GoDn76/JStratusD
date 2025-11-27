@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${DB_URL} #
+    username: ${DB_USERNAME} # Your Postgres username
+    password: ${DB_PASSWORD}
+    hikari:
+      data-source-properties:
+        prepareThreshold: 0
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Automatically updates the schema. Good for development.
+    show-sql: true # Lets you see the generated SQL queries in the console
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

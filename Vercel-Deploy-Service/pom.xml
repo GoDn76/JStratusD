@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.godn</groupId>
-    <artifactId>Vercel-Deploy-Service</artifactId>
+    <artifactId>Deploy-Service</artifactId>
     <name>Vercel-Deploy-Service</name>
     <description>Vercel-Deploy-Service</description>
     <url/>
