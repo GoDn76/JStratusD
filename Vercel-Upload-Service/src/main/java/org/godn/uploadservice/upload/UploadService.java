@@ -72,7 +72,7 @@ public class UploadService {
             if (attempts > 10) {
                 throw new RuntimeException("Failed to generate a unique Project ID after 10 attempts.");
             }
-        } while (deploymentService.existsById(projectId)); // Keep retrying if ID exists
+        } while (deploymentService.exitsById(projectId)); // Keep retrying if ID exists
         // ---------------------------------------------------------
 
         // D. Save "QUEUED" state to DB

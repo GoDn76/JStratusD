@@ -22,7 +22,7 @@ spring:
 
   data:
     redis:
-      host: ${UPSTASH_REDIS_REST_URL:host.docker.internal}
+      host: ${UPSTASH_REDIS_REST_HOST:host.docker.internal}
       port: ${REDIS_PORT:6379}
       password: ${UPSTASH_REDIS_REST_TOKEN}
       ssl:
