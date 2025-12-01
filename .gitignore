@@ -1,36 +1,23 @@
-HELP.md
+# --- Secrets (NEVER UPLOAD THESE) ---
+.env
+**/.env
+*.env
+
+# --- Java / Maven Build Files ---
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+**/target/
+*.class
+*.jar
+*.war
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-**/.idea
-*.iws
+# --- IDE Settings (Optional but recommended) ---
+.idea/
 *.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
 .vscode/
+.settings/
+.classpath
+.project
 
-**/src/main/resources/application-dev.properties
+# --- OS Files ---
+.DS_Store
+Thumbs.db

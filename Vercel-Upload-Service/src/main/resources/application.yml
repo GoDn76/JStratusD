@@ -4,8 +4,13 @@ spring:
     username: ${DB_USERNAME} # Your Postgres username
     password: ${DB_PASSWORD}
     hikari:
+      maximum-pool-size: 5
       data-source-properties:
         prepareThreshold: 0
+      connection-timeout: 10000
+      idle-timeout: 30000
+      max-lifetime: 60000
+
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -14,3 +19,24 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    redis:
+      host: ${UPSTASH_REDIS_REST_URL:host.docker.internal}
+      port: ${REDIS_PORT:6379}
+      password: ${UPSTASH_REDIS_REST_TOKEN}
+      ssl:
+        enabled: true # Crucial for Upstash!
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://godn-gw.duckdns.org:8761/eureka/
+  instance:
+    hostname: ${CONTAINER_APP_HOSTNAME:localhost}
+    # If on Azure (variable exists), use HTTPS/443. If local, use HTTP/8080.
+    non-secure-port-enabled: ${IS_LOCAL:true}
+    secure-port-enabled: ${IS_CLOUD:false}
+    secure-port: 443
+    non-secure-port: 8081
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
