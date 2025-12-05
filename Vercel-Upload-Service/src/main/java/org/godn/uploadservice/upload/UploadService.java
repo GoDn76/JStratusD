@@ -79,6 +79,13 @@ public class UploadService {
         Deployment deployment = new Deployment(projectId, requestDto.getRepoUrl(), userId);
         deploymentService.saveDeployment(deployment);
 
+        // --- NEW: SAVE SECRETS INSTANTLY ---
+        // We save them NOW, so they are guaranteed to exist before the worker wakes up.
+        if (requestDto.getSecrets() != null && !requestDto.getSecrets().isEmpty()) {
+            logger.info("Saving {} initial secrets for project {}", requestDto.getSecrets().size(), projectId);
+            deploymentService.saveSecrets(projectId, userId, requestDto.getSecrets());
+        }
+
         // E. Trigger Async
         self.processRepoInBackground(projectId, requestDto.getRepoUrl());
 

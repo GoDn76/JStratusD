@@ -1,25 +1,23 @@
 package org.godn.uploadservice.upload;
-import org.hibernate.validator.constraints.URL;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UploadRequestDto {
 
-//    @NotEmpty(message = "Repository URL cannot be empty")
-    @URL(message = "Invalid URL format")
+    @NotBlank(message = "Repository URL is mandatory")
+    @Pattern(regexp = "^https://github\\.com/.+\\.git$", message = "Must be a valid HTTPS GitHub .git URL")
     private String repoUrl;
 
-    public UploadRequestDto() {
-    }
-
-    public UploadRequestDto(String repoUrl) {
-        this.repoUrl = repoUrl;
-    }
-
-    public String getRepoUrl() {
-        return repoUrl;
-    }
-
-    public void setRepoUrl(String repoUrl) {
-        this.repoUrl = repoUrl;
-    }
+    // --- NEW FIELD ---
+    // Optional: User can send secrets immediately
+    private Map<String, String> secrets;
 
 }

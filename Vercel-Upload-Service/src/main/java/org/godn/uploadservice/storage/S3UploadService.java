@@ -8,11 +8,12 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class S3UploadService {
@@ -67,5 +68,50 @@ public class S3UploadService {
             }
         }
         throw new RuntimeException("Unknown upload failure");
+    }
+
+    /**
+     * Deletes all files with the given prefix (effectively deleting a "folder").
+     * Used for cleaning up source codes and live sites when a project is deleted.
+     */
+    public void deleteFolder(String prefix) {
+        try {
+            // 1. List all objects with the prefix
+            ListObjectsV2Request listReq = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .build();
+
+            ListObjectsV2Response listRes;
+            do {
+                listRes = s3Client.listObjectsV2(listReq);
+                List<S3Object> s3Objects = listRes.contents();
+
+                if (!s3Objects.isEmpty()) {
+                    // 2. Convert to ObjectIdentifiers
+                    List<ObjectIdentifier> toDelete = s3Objects.stream()
+                            .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
+                            .collect(Collectors.toList());
+
+                    // 3. Delete them in a batch
+                    DeleteObjectsRequest deleteReq = DeleteObjectsRequest.builder()
+                            .bucket(bucketName)
+                            .delete(Delete.builder().objects(toDelete).build())
+                            .build();
+
+                    s3Client.deleteObjects(deleteReq);
+                    logger.info("Deleted {} files from folder: {}", toDelete.size(), prefix);
+                }
+
+                // If there are more files (pagination), create a request for the next page
+                listReq = listReq.toBuilder().continuationToken(listRes.nextContinuationToken()).build();
+
+            } while (listRes.isTruncated()); // Continue until all files are listed & deleted
+
+        } catch (Exception e) {
+            logger.error("Failed to delete folder: {}", prefix, e);
+            // We log but don't throw exception, because DB deletion should proceed
+            // even if S3 cleanup fails (it's just orphan data).
+        }
     }
 }

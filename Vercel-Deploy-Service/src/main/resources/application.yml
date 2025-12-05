@@ -15,7 +15,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update # Automatically updates the schema. Good for development.
-    show-sql: true # Lets you see the generated SQL queries in the console
+    show-sql: false # Lets you see the generated SQL queries in the console
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -40,3 +40,6 @@ eureka:
     secure-port: 443
     non-secure-port: 8081
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+worker:
+  website-url: ${WORKER_WEBSITE_URL}

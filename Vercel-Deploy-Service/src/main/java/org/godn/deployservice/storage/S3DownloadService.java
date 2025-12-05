@@ -2,18 +2,23 @@ package org.godn.deployservice.storage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,17 +27,15 @@ public class S3DownloadService {
     private final S3Client s3Client;
     private final String bucketName;
 
-
     public S3DownloadService(S3Properties props) {
         this.bucketName = props.getBucketName();
-//        System.out.println("Bucket Name: " + bucketName + ", Endpoint: " + props.getEndpoint() + ", Region: " + props.getRegion() + ", Access Key: " + props.getAccessKey() + ", Secret Key: " + props.getSecretKey());
-
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
                 props.getAccessKey(),
                 props.getSecretKey()
         );
 
-        this.s3Client = S3Client.builder().credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+        this.s3Client = S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .endpointOverride(URI.create(props.getEndpoint()))
                 .region(Region.of(props.getRegion()))
                 .serviceConfiguration(S3Configuration.builder()
@@ -41,10 +44,10 @@ public class S3DownloadService {
                 ).build();
     }
 
-    public List<String> listObjectKeys(String fileName) {
+    public List<String> listObjectKeys(String prefix) {
         ListObjectsV2Request request = ListObjectsV2Request.builder()
                 .bucket(bucketName)
-                .prefix(fileName)
+                .prefix(prefix)
                 .build();
 
         ListObjectsV2Response listObjectsV2Response = s3Client.listObjectsV2(request);
@@ -56,37 +59,50 @@ public class S3DownloadService {
                 .collect(Collectors.toList());
     }
 
-    @Async
-    public CompletableFuture<GetObjectResponse> downloadFileFromR2(String fileName, String localFilePath) {
+    /**
+     * Downloads a file synchronously.
+     * Removed @Async so the caller waits until the file is fully written to disk.
+     */
+    public GetObjectResponse downloadFileFromR2(String fileName, String localFilePath) {
         GetObjectRequest getReq = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileName)
                 .build();
+
         int maxRetries = 3;
         for(int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                java.nio.file.Path localPath = java.nio.file.Paths.get(localFilePath);
-                java.nio.file.Files.createDirectories(localPath.getParent());
+                Path localPath = Paths.get(localFilePath);
+                // Ensure parent directories exist
+                if (localPath.getParent() != null) {
+                    Files.createDirectories(localPath.getParent());
+                }
+
+                // This blocks until the file is completely downloaded
                 GetObjectResponse outRes = s3Client.getObject(
                         getReq,
                         localPath
                 );
+
                 logger.info("File Downloaded to: {}", localFilePath);
-                return CompletableFuture.completedFuture(outRes);
+                return outRes; // Return the response directly
+
             } catch (Exception ex) {
                 logger.error("Download attempt {} failed for {}: {}", attempt, fileName, ex.getMessage());
+
                 if (attempt == maxRetries) {
-                    logger.error("Max retries reached. Upload failed for {}", fileName);
-                    return CompletableFuture.failedFuture(ex);
+                    logger.error("Max retries reached. Download failed for {}", fileName);
+                    throw new RuntimeException("Failed to download file: " + fileName, ex);
                 }
+
                 try {
                     Thread.sleep(1000L * attempt); // Exponential backoff
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    return CompletableFuture.failedFuture(ie);
+                    throw new RuntimeException("Download interrupted", ie);
                 }
             }
         }
-        return CompletableFuture.failedFuture(new RuntimeException("Unknown Download failure"));
+        throw new RuntimeException("Unknown Download failure");
     }
 }

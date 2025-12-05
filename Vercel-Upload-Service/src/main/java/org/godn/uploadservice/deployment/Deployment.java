@@ -32,6 +32,8 @@ public class Deployment {
     @Pattern(regexp = "^(https?|git)(://|@)([^/]+)/(.+)$", message = "Invalid Repository URL format")
     private String repositoryUrl;
 
+    private String websiteUrl;
+
     @Column(nullable = false)
     @NotBlank(message = "Owner ID is required")
     private String ownerId;

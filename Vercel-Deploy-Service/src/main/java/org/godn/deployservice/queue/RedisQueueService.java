@@ -20,4 +20,8 @@ public class RedisQueueService {
         return redisTemplate.opsForList().leftPop(QUEUE_KEY);
     }
 
+    public Long getQueueSize() {
+        return redisTemplate.opsForList().size(QUEUE_KEY);
+    }
+
 }

@@ -3,6 +3,10 @@ package org.godn.uploadservice.deployment;
 import org.godn.uploadservice.exception.BadRequestException;
 import org.godn.uploadservice.exception.ResourceNotFoundException;
 import org.godn.uploadservice.exception.UnauthorizedException;
+import org.godn.uploadservice.log.BuildLog;
+import org.godn.uploadservice.log.BuildLogRepository;
+import org.godn.uploadservice.storage.S3UploadService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,12 +20,24 @@ import java.util.stream.Collectors;
 @Transactional // Ensures all DB operations are atomic
 public class DeploymentService {
 
+    @Value("${upload.output.dir:output}")
+    private String sourceCodeDir;
+
     private final DeploymentRepository deploymentRepository;
     private final ProjectSecretRepository projectSecretRepository;
+    private final S3UploadService s3UploadService;
+    private final BuildLogRepository buildLogRepository;
 
-    public DeploymentService(DeploymentRepository deploymentRepository, ProjectSecretRepository projectSecretRepository) {
+    public DeploymentService(
+            DeploymentRepository deploymentRepository,
+            ProjectSecretRepository projectSecretRepository,
+            S3UploadService s3UploadService,
+            BuildLogRepository buildLogRepository
+            ) {
         this.deploymentRepository = deploymentRepository;
         this.projectSecretRepository = projectSecretRepository;
+        this.s3UploadService = s3UploadService;
+        this.buildLogRepository = buildLogRepository;
     }
 
     // ==================================================================================
@@ -127,16 +143,26 @@ public class DeploymentService {
     public void deleteDeployment(String deploymentId, String userId) {
         Deployment deployment = getDeployment(deploymentId);
 
-        // Security Check
+        // 1. Security Check
         if (!deployment.getOwnerId().equals(userId)) {
             throw new UnauthorizedException("You do not have permission to delete this deployment.");
         }
 
-        // 1. Delete Secrets first (Referential Integrity)
+        // 2. Delete Secrets (DB)
         projectSecretRepository.deleteByProjectId(deploymentId);
 
-        // 2. Delete Deployment
+        // 3. Delete Files (R2) - CLEANUP EVERYTHING
+        // A. Delete Source Code (e.g. output/0E9L6/)
+        s3UploadService.deleteFolder(sourceCodeDir + "/" + deploymentId);
+
+        // B. Delete Live Site (e.g. live-sites/0E9L6/)
+        s3UploadService.deleteFolder("live-sites/" + deploymentId);
+
+        // 4. Delete Record (DB)
         deploymentRepository.delete(deployment);
+
+        // 5. (Optional) Delete Build Logs if you implemented that tablew
+         buildLogRepository.deleteByDeploymentId(deploymentId);
     }
 
     // ==================================================================================
@@ -169,6 +195,14 @@ public class DeploymentService {
                 projectSecretRepository.save(newSecret);
             }
         }
+    }
+
+    /**
+     * NEW: Get build logs for a specific project.
+     * Returns them sorted by timestamp so they read like a console.
+     */
+    public List<BuildLog> getDeploymentLogs(String deploymentId) {
+        return buildLogRepository.findByDeploymentIdOrderByTimestampAsc(deploymentId);
     }
 
     public Map<String, String> parseEnvFile(String envContent) {
