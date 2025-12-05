@@ -28,6 +28,7 @@ spring:
       ssl:
         enabled: true # Crucial for Upstash!
 
+
 eureka:
   client:
     service-url:
