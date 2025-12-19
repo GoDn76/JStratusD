@@ -16,6 +16,8 @@ public class UploadRequestDto {
     @Pattern(regexp = "^https://github\\.com/.+\\.git$", message = "Must be a valid HTTPS GitHub .git URL")
     private String repoUrl;
 
+    @NotBlank(message = "Project name is mandatory")
+    private String projectName;
     // --- NEW FIELD ---
     // Optional: User can send secrets immediately
     private Map<String, String> secrets;

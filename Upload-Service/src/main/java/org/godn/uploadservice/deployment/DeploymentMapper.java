@@ -6,6 +6,7 @@ public class DeploymentMapper {
     public static DeploymentResponseDto toDto(Deployment deployment) {
         return new DeploymentResponseDto(
                 deployment.getId(),
+                deployment.getProjectName(),
                 deployment.getStatus().toString(),
                 deployment.getRepositoryUrl(),
                 deployment.getWebsiteUrl(), // <--- Map it here

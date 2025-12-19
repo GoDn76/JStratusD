@@ -5,10 +5,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDateTime;
 
@@ -31,6 +33,14 @@ public class Deployment {
     @Pattern(regexp = "^(https?|git)(://|@)([^/]+)/(.+)$", message = "Invalid Repository URL format")
     private String repositoryUrl;
 
+    @NotBlank(message = "Project name is required")
+    @Size(min = 3, max = 50, message = "Project name must be between 3 and 50 characters")
+    // Optional: Block dangerous HTML characters to prevent XSS in your dashboard
+    @Pattern(regexp = "^[^<>]*$", message = "Project name cannot contain angle brackets (< >)")
+    private String projectName;
+
+
+    @URL
     private String websiteUrl;
 
     @Column(nullable = false)
@@ -47,9 +57,17 @@ public class Deployment {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Custom constructor for service convenience
     public Deployment(String id, String repositoryUrl, String ownerId) {
         this.id = id;
+        this.repositoryUrl = repositoryUrl;
+        this.ownerId = ownerId;
+        this.status = DeploymentStatus.QUEUED;
+        this.createdAt = LocalDateTime.now();
+    }
+    // Custom constructor for service convenience
+    public Deployment(String id, String projectName, String repositoryUrl, String ownerId) {
+        this.id = id;
+        this.projectName = projectName;
         this.repositoryUrl = repositoryUrl;
         this.ownerId = ownerId;
         this.status = DeploymentStatus.QUEUED;

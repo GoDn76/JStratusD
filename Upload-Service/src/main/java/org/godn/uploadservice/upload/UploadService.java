@@ -76,7 +76,7 @@ public class UploadService {
         // ---------------------------------------------------------
 
         // D. Save "QUEUED" state to DB
-        Deployment deployment = new Deployment(projectId, requestDto.getRepoUrl(), userId);
+        Deployment deployment = new Deployment(projectId, requestDto.getProjectName(), requestDto.getRepoUrl(), userId);
         deploymentService.saveDeployment(deployment);
 
         // --- NEW: SAVE SECRETS INSTANTLY ---
@@ -87,7 +87,7 @@ public class UploadService {
         }
 
         // E. Trigger Async
-        self.processRepoInBackground(projectId, requestDto.getRepoUrl());
+        self.processRepoInBackground(projectId, requestDto.getRepoUrl(), userId);
 
         return projectId;
     }
@@ -97,7 +97,7 @@ public class UploadService {
      * Runs in a background thread.
      */
     @Async
-    public void processRepoInBackground(String projectId, String repoUrl) {
+    public void processRepoInBackground(String projectId, String repoUrl, String userId) {
         Path tempDir = null;
         logger.info("Starting background processing for project: {}", projectId);
 
@@ -160,7 +160,7 @@ public class UploadService {
 
         } catch (Exception e) {
             logger.error("Failed to process deployment {}", projectId, e);
-            updateStatusToFailed(projectId);
+            updateStatusToFailed(projectId, userId);
         } finally {
             // 7. Cleanup
             // Only runs after ALL upload threads have finished/crashed
@@ -170,9 +170,9 @@ public class UploadService {
         }
     }
 
-    private void updateStatusToFailed(String id) {
+    private void updateStatusToFailed(String id, String userId) {
         try {
-            Deployment d = deploymentService.getDeployment(id);
+            Deployment d = deploymentService.getDeployment(userId, id);
             d.setStatus(DeploymentStatus.FAILED);
             deploymentService.saveDeployment(d);
         } catch (Exception ex) {

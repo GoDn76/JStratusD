@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class DeploymentResponseDto {
     private String id;
+    private String name;
     private String status;
     private String repositoryUrl;
     private String websiteUrl; // <--- Add this

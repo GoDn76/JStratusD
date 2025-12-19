@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/deploys") // <--- Base Path for ALL endpoints
@@ -62,8 +61,8 @@ public class DeploymentController {
      * GET /deployments/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<DeploymentResponseDto> getDeployment(@PathVariable String id) {
-        return ResponseEntity.ok(deploymentService.getDeploymentDto(id));
+    public ResponseEntity<DeploymentResponseDto> getDeployment(@PathVariable String id, @RequestHeader("X-User-Id") String userId) {
+        return ResponseEntity.ok(deploymentService.getDeploymentDto(userId, id));
     }
 
     // --- ACTIONS ---
@@ -104,7 +103,7 @@ public class DeploymentController {
             @RequestHeader("X-User-Id") String userId
     ) {
         // 1. Security Check: Ensure user owns this deployment
-        Deployment deployment = deploymentService.getDeployment(id);
+        Deployment deployment = deploymentService.getDeployment(userId, id);
         if (!deployment.getOwnerId().equals(userId)) {
             // Or throw new UnauthorizedException(...)
             return ResponseEntity.status(403).build();

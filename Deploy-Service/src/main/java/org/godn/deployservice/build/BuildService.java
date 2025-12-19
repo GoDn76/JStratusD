@@ -155,14 +155,11 @@ public class BuildService {
         String installCommand;
 
         if (hasLockFile) {
-            // ✅ BEST PRACTICE: Use 'npm ci'
-            // It creates a reproducible build by installing EXACT versions from the lockfile.
-            // It deletes existing node_modules (if any) and is faster.
+            // Use 'npm ci' for clean, faster installs
             logger.info("Detected package-lock.json. Using 'npm ci' for faster, reliable build.");
             installCommand = "npm ci --legacy-peer-deps --no-audit --no-fund";
         } else {
             // ⚠️ FALLBACK: Use 'npm install'
-            // Slower, might result in different versions than local, but works without lockfile.
             logger.warn("No package-lock.json found. Falling back to 'npm install'.");
             installCommand = "npm install --legacy-peer-deps --no-progress --no-audit --no-fund";
         }

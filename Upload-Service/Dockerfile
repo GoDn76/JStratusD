@@ -7,9 +7,8 @@ RUN apt-get update \
 
 
 WORKDIR /app
-COPY . /app
+COPY target/*.jar app.jar
 
-# Run your Spring Boot app
-CMD java -jar target/Vercel-Upload-Service-3.5.0.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
 EXPOSE 8080

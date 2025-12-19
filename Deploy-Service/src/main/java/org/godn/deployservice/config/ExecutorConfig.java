@@ -23,7 +23,7 @@ public class ExecutorConfig {
     @Bean("buildExecutor")
     public ExecutorService buildExecutor() {
         // Sets the maximum number of builds that can run at the same time.
-        int concurrentBuilds = 3;
+        int concurrentBuilds = 2;
 
         return Executors.newFixedThreadPool(concurrentBuilds);
     }

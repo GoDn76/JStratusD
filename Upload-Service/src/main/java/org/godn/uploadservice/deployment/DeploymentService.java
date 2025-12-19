@@ -49,16 +49,18 @@ public class DeploymentService {
     /**
      * Get a specific deployment entity.
      */
-    public Deployment getDeployment(String id) {
-        return deploymentRepository.findById(id)
+    @Transactional(readOnly = true)
+    public Deployment getDeployment(String ownerId, String id) {
+        return deploymentRepository.findByOwnerIdAndId(ownerId, id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deployment", "id", id));
     }
 
     /**
      * Get specific deployment DTO (for Controller).
      */
-    public DeploymentResponseDto getDeploymentDto(String id) {
-        return DeploymentMapper.toDto(getDeployment(id));
+    @Transactional(readOnly = true)
+    public DeploymentResponseDto getDeploymentDto(String ownerId, String id) {
+        return DeploymentMapper.toDto(getDeployment(ownerId, id)); // Added OwnerId for security
     }
 
     /**
@@ -121,7 +123,7 @@ public class DeploymentService {
      * Cancel a running deployment.
      */
     public void cancelDeployment(String deploymentId, String userId) {
-        Deployment deployment = getDeployment(deploymentId);
+        Deployment deployment = getDeployment(userId, deploymentId);
 
         // Security Check
         if (!deployment.getOwnerId().equals(userId)) {
@@ -141,7 +143,7 @@ public class DeploymentService {
      * Delete a deployment and its secrets completely from the DB.
      */
     public void deleteDeployment(String deploymentId, String userId) {
-        Deployment deployment = getDeployment(deploymentId);
+        Deployment deployment = getDeployment(userId, deploymentId);
 
         // 1. Security Check
         if (!deployment.getOwnerId().equals(userId)) {
@@ -170,7 +172,7 @@ public class DeploymentService {
     // ==================================================================================
 
     public void saveSecrets(String deploymentId, String userId, Map<String, String> secrets) {
-        Deployment deployment = getDeployment(deploymentId);
+        Deployment deployment = getDeployment(userId, deploymentId);
 
         if (!deployment.getOwnerId().equals(userId)) {
             throw new UnauthorizedException("You do not have permission to manage secrets for this project.");

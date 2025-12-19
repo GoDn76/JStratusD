@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +48,7 @@ class UploadServiceTest {
         req.setRepoUrl(repo);
 
         // Mock that an active deployment exists
-        DeploymentResponseDto activeDto = new DeploymentResponseDto("OLD_ID", "QUEUED", repo, null);
+        DeploymentResponseDto activeDto = new DeploymentResponseDto("id", "READY", "https://repo.git", "https://site.url", LocalDateTime.now());
         when(deploymentService.findActiveDeployment(repo, userId)).thenReturn(Optional.of(activeDto));
 
         // Execute

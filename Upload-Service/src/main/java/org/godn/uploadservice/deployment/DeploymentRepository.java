@@ -23,6 +23,7 @@ public interface DeploymentRepository extends JpaRepository<Deployment, String> 
      */
     List<Deployment> findAllByOwnerIdAndStatusIn(String ownerId, List<DeploymentStatus> statuses);
 
+    Optional<Deployment> findByOwnerIdAndId(String ownerId, String id);
     /**
      * 3. Idempotency (API Level): Check if THIS USER is already building THIS REPO.
      * Prevents double-clicks, but allows User B to build the same repo as User A.

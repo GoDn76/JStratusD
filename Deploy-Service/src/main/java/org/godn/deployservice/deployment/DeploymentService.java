@@ -89,7 +89,7 @@ public class DeploymentService {
 
             buildTask.get(DEPLOYMENT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
-            String finalSiteUrl = workerBaseUrl + "/view/" + id;
+            String finalSiteUrl = workerBaseUrl + id;
             updateStatus(id, DeploymentStatus.READY, finalSiteUrl);
             saveCompletionLog("🚀 Successfully deployed site!", id, LocalDateTime.now());
             logger.info("[BUILD_SUCCESS] ID: {} is live at {}", id, finalSiteUrl);

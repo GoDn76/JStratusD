@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +42,7 @@ public interface DeploymentRepository extends JpaRepository<Deployment, String> 
      */
     @Modifying
     @Transactional
-    @Query("UPDATE Deployment d SET d.status = 'BUILDING' WHERE d.id = :id AND d.status = 'QUEUED'")
+    @Query("UPDATE Deployment d SET d.status = 'BUILDING' WHERE d.id = :id AND d.status IN ('QUEUED', 'READY')")
     int lockDeployment(@Param("id") String id);
 
     long countByOwnerId(String ownerId);
