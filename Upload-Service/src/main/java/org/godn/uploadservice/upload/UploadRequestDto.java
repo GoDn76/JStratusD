@@ -18,8 +18,11 @@ public class UploadRequestDto {
 
     @NotBlank(message = "Project name is mandatory")
     private String projectName;
-    // --- NEW FIELD ---
-    // Optional: User can send secrets immediately
+
+    @NotBlank(message = "Branch is mandatory")
+    @Pattern(regexp = "^[a-zA-Z0-9._/]+$", message = "Branch name contains invalid characters")
+    private String branch;
+
     private Map<String, String> secrets;
 
 }

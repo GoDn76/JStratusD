@@ -46,6 +46,23 @@ public class DeploymentController {
     public ResponseEntity<List<DeploymentResponseDto>> getAllDeployments(@RequestHeader("X-User-Id") String userId) {
         return ResponseEntity.ok(deploymentService.getAllDeployments(userId));
     }
+    @PostMapping("/{id}/rebuild")
+    public ResponseEntity<UploadResponseDto> rebuildDeployment(
+            @PathVariable String id,
+            @RequestHeader("X-User-Id") String userId
+    ) {
+        String projectId = uploadService.rebuildProject(userId, id);
+        return ResponseEntity.ok(new UploadResponseDto(true, "Rebuild Queued", projectId));
+    }
+
+    @GetMapping("/branches")
+    public ResponseEntity<List<BranchResponseDto>> getBranches(
+            @Valid @RequestParam String repoUrl,
+            String accessToken,
+            @RequestHeader("X-User-Id") String userId
+    ) {
+        return ResponseEntity.ok(deploymentService.getBranches(repoUrl, accessToken));
+    }
 
     /**
      * Get only ACTIVE Deployments.

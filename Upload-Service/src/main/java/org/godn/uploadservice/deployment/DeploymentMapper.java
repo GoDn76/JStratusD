@@ -7,8 +7,10 @@ public class DeploymentMapper {
         return new DeploymentResponseDto(
                 deployment.getId(),
                 deployment.getProjectName(),
+                deployment.getLastCommitHash(),
                 deployment.getStatus().toString(),
                 deployment.getRepositoryUrl(),
+                deployment.getBranch(),
                 deployment.getWebsiteUrl(), // <--- Map it here
                 deployment.getCreatedAt()
         );

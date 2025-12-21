@@ -1,10 +1,9 @@
 package org.godn.uploadservice.upload;
 
+import jakarta.validation.Valid;
 import org.eclipse.jgit.api.Git;
-import org.godn.uploadservice.deployment.Deployment;
-import org.godn.uploadservice.deployment.DeploymentResponseDto;
-import org.godn.uploadservice.deployment.DeploymentService;
-import org.godn.uploadservice.deployment.DeploymentStatus;
+import org.eclipse.jgit.lib.ObjectId;
+import org.godn.uploadservice.deployment.*;
 import org.godn.uploadservice.queue.RedisQueueService;
 import org.godn.uploadservice.storage.S3UploadService;
 import org.godn.uploadservice.util.GenerateId;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,8 +75,18 @@ public class UploadService {
         } while (deploymentService.exitsById(projectId)); // Keep retrying if ID exists
         // ---------------------------------------------------------
 
+        List<BranchResponseDto> branches = deploymentService.getBranches(requestDto.getRepoUrl(), null);
+        System.out.println(requestDto.getRepoUrl());
         // D. Save "QUEUED" state to DB
-        Deployment deployment = new Deployment(projectId, requestDto.getProjectName(), requestDto.getRepoUrl(), userId);
+        Deployment deployment = new Deployment();
+        deployment.setId(projectId);
+        deployment.setOwnerId(userId);
+        deployment.setProjectName(requestDto.getProjectName());
+        deployment.setRepositoryUrl(requestDto.getRepoUrl().trim()); // Trim fixes spaces!
+        deployment.setBranch(requestDto.getBranch());
+        deployment.setLastCommitHash(findCommitHashForBranch(branches, requestDto.getBranch()));
+        deployment.setStatus(DeploymentStatus.QUEUED);
+
         deploymentService.saveDeployment(deployment);
 
         // --- NEW: SAVE SECRETS INSTANTLY ---
@@ -87,7 +97,7 @@ public class UploadService {
         }
 
         // E. Trigger Async
-        self.processRepoInBackground(projectId, requestDto.getRepoUrl(), userId);
+        self.processRepoInBackground(projectId, requestDto.getRepoUrl(), userId, requestDto.getBranch());
 
         return projectId;
     }
@@ -97,7 +107,7 @@ public class UploadService {
      * Runs in a background thread.
      */
     @Async
-    public void processRepoInBackground(String projectId, String repoUrl, String userId) {
+    public void processRepoInBackground(String projectId, String repoUrl, String userId, String branch) {
         Path tempDir = null;
         logger.info("Starting background processing for project: {}", projectId);
 
@@ -106,13 +116,21 @@ public class UploadService {
             tempDir = Files.createTempDirectory("upload-service-" + projectId + "-");
             File targetDir = tempDir.toFile();
 
+            String clonedCommitHash = null;
             // 2. Clone Git Repo (Auto-closes via try-with-resources)
             logger.info("Cloning repository: {}", repoUrl);
             try (Git git = Git.cloneRepository()
                     .setURI(repoUrl)
                     .setDirectory(targetDir)
+                    .setBranch(branch)
                     .call()) {
                 logger.info("Repository cloned successfully for ID: {}", projectId);
+
+                ObjectId head = git.getRepository().resolve("HEAD");
+                if (head != null) {
+                    clonedCommitHash = head.getName(); // This gets the SHA string (e.g., "a1b2c3...")
+                    logger.info("Cloned Commit Hash: {}", clonedCommitHash);
+                }
             }
 
             // 3. Walk files
@@ -154,6 +172,14 @@ public class UploadService {
 
             logger.info("All source files uploaded to S3 for ID: {}", projectId);
 
+
+            if (clonedCommitHash != null) {
+                Deployment d = deploymentService.getDeployment(userId, projectId);
+                d.setLastCommitHash(clonedCommitHash); // <--- THIS IS CRITICAL
+                d.setStatus(DeploymentStatus.QUEUED); // Update status so user knows upload is done
+                deploymentService.saveDeployment(d);
+            }
+
             // 6. Push to Redis (Hand off to Deploy Service)
             redisQueueService.pushToQueue(projectId);
             logger.info("Deployment ID {} pushed to Redis queue", projectId);
@@ -168,6 +194,43 @@ public class UploadService {
                 cleanupDirectory(tempDir);
             }
         }
+    }
+
+    @Transactional
+    public String rebuildProject(String userId, String projectId) {
+
+        // A. Check Project Id
+        Deployment deployment = deploymentService.getDeployment(userId, projectId); // Will throw if not found
+
+        // B. Idempotency Check
+        Optional<DeploymentResponseDto> active = deploymentService.findActiveDeployment(deployment.getRepositoryUrl(), userId);
+        if (active.isPresent()) {
+            logger.info("Returning existing active deployment {} for user {}", active.get().getId(), userId);
+            return active.get().getId();
+        }
+
+
+        // D. Save "QUEUED" state to DB
+        List<BranchResponseDto> branches = deploymentService.getBranches(deployment.getRepositoryUrl(), null);
+
+        if (Objects.equals(findCommitHashForBranch(branches, deployment.getBranch()), deployment.getLastCommitHash())) {
+            deployment.setStatus(DeploymentStatus.QUEUED);
+            deploymentService.saveDeployment(deployment);
+            redisQueueService.pushToQueue(projectId);
+            logger.info("Rebuild Deployment ID {} pushed to Redis queue", projectId);
+            return projectId;
+        } else {
+            deployment.setStatus(DeploymentStatus.QUEUED);
+            deploymentService.saveDeployment(deployment);
+            self.processRepoInBackground(
+                    projectId,
+                    deployment.getRepositoryUrl(),
+                    userId,
+                    deployment.getBranch()
+            );
+        }
+
+        return projectId;
     }
 
     private void updateStatusToFailed(String id, String userId) {
@@ -191,6 +254,18 @@ public class UploadService {
         } catch (IOException e) {
             logger.warn("Could not fully clean up temp dir {}: {}", dirPath, e.getMessage());
         }
+    }
+
+    public String findCommitHashForBranch(List<BranchResponseDto> branches, String targetBranchName) {
+        return branches.stream()
+                // 1. Filter: Find the branch where the name matches
+                .filter(branch -> branch.getName().equals(targetBranchName))
+                // 2. Get the first match (if any)
+                .findFirst()
+                // 3. Extract the SHA from the Commit object inside
+                .map(branch -> branch.getCommit().getSha())
+                // 4. Handle the case where the branch isn't found
+                .orElseThrow(() -> new IllegalArgumentException("Branch '" + targetBranchName + "' not found in the provided list."));
     }
 
 }

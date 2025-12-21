@@ -1,5 +1,6 @@
 package org.godn.uploadservice.upload;
 
+import org.godn.uploadservice.deployment.BranchResponseDto;
 import org.godn.uploadservice.deployment.Deployment;
 import org.godn.uploadservice.deployment.DeploymentResponseDto;
 import org.godn.uploadservice.deployment.DeploymentService;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,17 +29,13 @@ class UploadServiceTest {
     @Mock private S3UploadService s3UploadService;
     @Mock private RedisQueueService redisQueueService;
     @Mock private DeploymentService deploymentService;
-
-    @Mock
-    private UploadService selfProxy; // Mocking the self-injected proxy
-
-    @InjectMocks
-    private UploadService uploadService;
+    @Mock private UploadService selfProxy;
+    @InjectMocks private UploadService uploadService;
 
     @BeforeEach
     void setUp() {
-        // Manually inject the 'self' mock into the service
         ReflectionTestUtils.setField(uploadService, "self", selfProxy);
+        ReflectionTestUtils.setField(uploadService, "s3BaseFolder", "test-folder"); // Inject @Value field
     }
 
     @Test
@@ -47,43 +45,56 @@ class UploadServiceTest {
         UploadRequestDto req = new UploadRequestDto();
         req.setRepoUrl(repo);
 
-        // Mock that an active deployment exists
-        DeploymentResponseDto activeDto = new DeploymentResponseDto("id", "READY", "https://repo.git", "https://site.url", LocalDateTime.now());
+        // FIX 1: Use matching ID
+        DeploymentResponseDto activeDto = new DeploymentResponseDto(
+                "EXISTING_ID", "Name", "Hash", "READY", repo, "main", "url", LocalDateTime.now()
+        );
         when(deploymentService.findActiveDeployment(repo, userId)).thenReturn(Optional.of(activeDto));
 
-        // Execute
         String resultId = uploadService.uploadProject(req, userId);
 
-        // Verify
-        assertEquals("OLD_ID", resultId);
+        assertEquals("EXISTING_ID", resultId);
 
-        // Ensure we did NOT save a new one or start async process
+        // Correct verifications
         verify(deploymentService, never()).saveDeployment(any());
-        verify(selfProxy, never()).processRepoInBackground(anyString(), anyString());
+        // Match Argument types strictly or use any()
+        verify(selfProxy, never()).processRepoInBackground(any(), any(), any(), any());
     }
 
     @Test
     void uploadProject_ShouldStartNew_IfNoneActive() {
         String userId = "user-1";
         String repo = "https://github.com/test/repo";
+        String branch = "main";
+
         UploadRequestDto req = new UploadRequestDto();
         req.setRepoUrl(repo);
+        req.setBranch(branch); // Ensure request has branch!
+        req.setProjectName("My Project");
 
-        // Mock no active deployment
         when(deploymentService.findActiveDeployment(repo, userId)).thenReturn(Optional.empty());
+        when(deploymentService.exitsById(anyString())).thenReturn(false); // ID is unique
+
+        // FIX 3: Mock the Branch fetch
+        BranchResponseDto b = new BranchResponseDto();
+        b.setName("main");
+        BranchResponseDto.CommitInfo c = new BranchResponseDto.CommitInfo();
+        c.setSha("sha-123");
+        b.setCommit(c);
+
+        when(deploymentService.getBranches(eq(repo), any())).thenReturn(List.of(b));
 
         // Execute
         String resultId = uploadService.uploadProject(req, userId);
 
-        // Verify
         assertNotNull(resultId);
         assertEquals(5, resultId.length());
 
-        // Verify Flow
         verify(deploymentService).checkDeploymentLimit(userId);
         verify(deploymentService).saveDeployment(any(Deployment.class));
 
-        // Verify the Async method was called on the proxy
-        verify(selfProxy).processRepoInBackground(eq(resultId), eq(repo));
+        // FIX 2: Verify EXACT argument order (check your Service class!)
+        // Assuming: processRepoInBackground(id, url, userId, branch)
+        verify(selfProxy).processRepoInBackground(eq(resultId), eq(repo), eq(userId), eq(branch));
     }
 }

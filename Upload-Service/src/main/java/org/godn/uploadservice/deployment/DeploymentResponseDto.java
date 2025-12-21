@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 public class DeploymentResponseDto {
     private String id;
     private String name;
+    private String lastCommitHash;
     private String status;
     private String repositoryUrl;
+    private String branch;
     private String websiteUrl; // <--- Add this
     private LocalDateTime createdAt;
 }

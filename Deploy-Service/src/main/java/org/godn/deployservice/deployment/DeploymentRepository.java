@@ -42,7 +42,7 @@ public interface DeploymentRepository extends JpaRepository<Deployment, String> 
      */
     @Modifying
     @Transactional
-    @Query("UPDATE Deployment d SET d.status = 'BUILDING' WHERE d.id = :id AND d.status IN ('QUEUED', 'READY')")
+    @Query("UPDATE Deployment d SET d.status = 'BUILDING' WHERE d.id = :id AND d.status NOT IN ('BUILDING')")
     int lockDeployment(@Param("id") String id);
 
     long countByOwnerId(String ownerId);

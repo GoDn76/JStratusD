@@ -29,23 +29,43 @@ class DeploymentServiceTest {
     // --- TEST: GET DEPLOYMENT ---
 
     @Test
-    void getDeployment_ShouldReturnDeployment_WhenExists() {
+    void getDeployment_ShouldReturnDeployment_WhenExistsAndOwnerMatches() {
         String id = "12345";
+        String ownerId = "owner-1";
+
         Deployment mockDeployment = new Deployment();
         mockDeployment.setId(id);
+        mockDeployment.setOwnerId(ownerId); // Fixed: Set Owner ID to prevent UnauthorizedException
 
         when(deploymentRepository.findById(id)).thenReturn(Optional.of(mockDeployment));
 
-        Deployment result = deploymentService.getDeployment(id);
+        Deployment result = deploymentService.getDeployment(ownerId, id);
         assertEquals(id, result.getId());
     }
 
     @Test
     void getDeployment_ShouldThrow_WhenNotFound() {
         String id = "invalid";
+        String ownerId = "owner-invalid";
         when(deploymentRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> deploymentService.getDeployment(id));
+        assertThrows(ResourceNotFoundException.class, () -> deploymentService.getDeployment(ownerId, id));
+    }
+
+    @Test
+    void getDeployment_ShouldThrow_WhenNotOwner() {
+        // Added Security Test Case
+        String id = "12345";
+        String realOwner = "real-owner";
+        String hacker = "hacker";
+
+        Deployment mockDeployment = new Deployment();
+        mockDeployment.setId(id);
+        mockDeployment.setOwnerId(realOwner);
+
+        when(deploymentRepository.findById(id)).thenReturn(Optional.of(mockDeployment));
+
+        assertThrows(UnauthorizedException.class, () -> deploymentService.getDeployment(hacker, id));
     }
 
     // --- TEST: CHECK LIMITS ---

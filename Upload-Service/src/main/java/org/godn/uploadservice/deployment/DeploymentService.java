@@ -7,8 +7,16 @@ import org.godn.uploadservice.log.BuildLog;
 import org.godn.uploadservice.log.BuildLogRepository;
 import org.godn.uploadservice.storage.S3UploadService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +35,7 @@ public class DeploymentService {
     private final ProjectSecretRepository projectSecretRepository;
     private final S3UploadService s3UploadService;
     private final BuildLogRepository buildLogRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public DeploymentService(
             DeploymentRepository deploymentRepository,
@@ -92,6 +101,39 @@ public class DeploymentService {
                 .map(DeploymentMapper::toDto);
     }
 
+    public List<BranchResponseDto> getBranches(String repoUrl, String accessToken) {
+
+        // Added ?per_page=100 to get more branches
+        String url = String.format("https://api.github.com/repos/%s/%s/branches?per_page=100",
+                getRepoOwner(repoUrl),
+                getRepoName(repoUrl));
+
+        HttpHeaders headers = new HttpHeaders();
+        if (accessToken != null && !accessToken.isEmpty()) {
+            headers.setBearerAuth(accessToken);
+        }
+        headers.set("Accept", "application/vnd.github+json"); // Good practice for GitHub API
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<List<BranchResponseDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<List<BranchResponseDto>>() {}
+            );
+            return response.getBody();
+
+        } catch (HttpClientErrorException.NotFound e) {
+            // Repo doesn't exist or is private/hidden
+            throw new BadRequestException("Repository not found. Check the URL or ensure you have access." +" Error = "+e);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            // Token is invalid
+            throw new BadRequestException("Invalid or expired GitHub token." +" Error = "+e);
+        }
+    }
+
     // ==================================================================================
     // WRITE OPERATIONS
     // ==================================================================================
@@ -99,6 +141,7 @@ public class DeploymentService {
     public void saveDeployment(Deployment deployment) {
         deploymentRepository.save(deployment);
     }
+
 
     /**
      * Enforce strict limits: Max 1 concurrent build, Max 3 total projects.
@@ -218,5 +261,35 @@ public class DeploymentService {
             }
         }
         return secrets;
+    }
+
+    public String getRepoOwner(String repositoryUrl) {
+        if (repositoryUrl == null) return null;
+        String[] parts = repositoryUrl.split("/");
+        // usually parts[3] is owner in a standard https github url
+        return parts.length > 3 ? parts[3] : null;
+    }
+
+    private String getRepoName(String url) {
+        if (url == null) return null;
+
+        // Remove trailing slash if user added it
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+
+        String[] parts = url.split("/");
+
+        // Safety check
+        if (parts.length < 5) return null;
+
+        String repoName = parts[4]; // Index 4 is the repo name part
+
+        // CRITICAL: Strip .git
+        if (repoName.endsWith(".git")) {
+            return repoName.substring(0, repoName.length() - 4);
+        }
+
+        return repoName;
     }
 }
