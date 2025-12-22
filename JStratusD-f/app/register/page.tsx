@@ -14,11 +14,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Layers3, Loader2, ShieldCheck, ArrowRight, User, Mail, Lock } from 'lucide-react';
 import api from '@/lib/api';
 
-// --- SCHEMA 1: Registration ---
+// --- SCHEMA 1: Registration with Confirm Password ---
 const registerSchema = z.object({
   name: z.string().min(3, { message: "Username must be at least 3 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string().min(1, { message: "Please confirm your password." }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 // --- SCHEMA 2: OTP Verification ---
@@ -42,7 +46,7 @@ export default function RegisterPage() {
   // --- FORMS ---
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   const otpForm = useForm<OtpFormValues>({
@@ -62,13 +66,13 @@ export default function RegisterPage() {
 
     const serverData = error.response.data;
 
-    // 2. Service Down (e.g. { "error": "Authentication Service is down" })
+    // 2. Service Down
     if (serverData?.error) {
       toast.error(`Service Error: ${serverData.error}`);
       return;
     }
 
-    // 3. Logic/Validation Error (e.g. { "success": false, "message": "Email already exists" })
+    // 3. Logic/Validation Error
     if (serverData?.message) {
       toast.error(serverData.message);
       return;
@@ -82,7 +86,10 @@ export default function RegisterPage() {
   const onRegisterSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await api.post('/auth/register', data);
+      // Clean payload: Remove confirmPassword before sending to API
+      const { confirmPassword, ...payload } = data;
+
+      await api.post('/auth/register', payload);
       
       // Save credentials for Step 2
       setTempCredentials({ email: data.email, password: data.password });
@@ -205,6 +212,25 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
+                  
+                  {/* ADDED CONFIRM PASSWORD FIELD */}
+                  <FormField
+                    control={registerForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" placeholder="••••••••" className="pl-9" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Button type="submit" className="w-full mt-2" disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign Up"}
                   </Button>

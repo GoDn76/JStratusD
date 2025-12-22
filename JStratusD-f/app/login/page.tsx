@@ -25,9 +25,14 @@ const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
+// Updated Schema with Confirm Password validation
 const resetPasswordSchema = z.object({
   otp: z.string().length(6, "OTP must be exactly 6 digits"),
   newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -59,7 +64,7 @@ export default function LoginPage() {
 
   const resetForm = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { otp: "", newPassword: "" },
+    defaultValues: { otp: "", newPassword: "", confirmPassword: "" },
   });
 
   // --- HELPER: ERROR HANDLER ---
@@ -71,9 +76,9 @@ export default function LoginPage() {
     }
     const data = error.response.data;
     if (data?.error) {
-      toast.error(data.error); // "Service Down" etc.
+      toast.error(data.error); 
     } else if (data?.message) {
-      toast.error(data.message); // "Invalid credentials"
+      toast.error(data.message); 
     } else {
       toast.error(fallback);
     }
@@ -105,10 +110,8 @@ export default function LoginPage() {
   const onRequestResetSubmit = async (data: ForgotPasswordValues) => {
     setIsLoading(true);
     try {
-      // POST /auth/request-password-reset
       await api.post('/auth/request-password-reset', data);
-      
-      setResetEmail(data.email); // Save email for next step
+      setResetEmail(data.email); 
       setView('RESET');
       toast.success("OTP sent! Please check your email.");
     } catch (error: any) {
@@ -124,16 +127,15 @@ export default function LoginPage() {
     try {
       const payload = {
         email: resetEmail,
-        otp: data.otp, // Note: Using lowercase 'otp' to match standard JSON conventions
-        newPassword: data.newPassword
+        otp: data.otp,
+        newPassword: data.newPassword 
+        // We do NOT send confirmPassword to the API
       };
 
-      // POST /auth/reset-password
       await api.post('/auth/reset-password', payload);
       
       toast.success("Password reset successful! Please login.");
       
-      // Return to login view with email pre-filled
       loginForm.setValue('email', resetEmail);
       setView('LOGIN');
       
@@ -184,7 +186,6 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="flex items-center justify-between">
                             <FormLabel>Password</FormLabel>
-                            {/* FORGOT PASSWORD LINK */}
                             <Button 
                                 variant="link" 
                                 className="px-0 font-normal h-auto text-xs text-muted-foreground hover:text-primary"
@@ -220,7 +221,7 @@ export default function LoginPage() {
           </>
         )}
 
-        {/* ================= VIEW 2: FORGOT PASSWORD (Enter Email) ================= */}
+        {/* ================= VIEW 2: FORGOT PASSWORD ================= */}
         {view === 'FORGOT' && (
           <>
             <CardHeader className="text-center">
@@ -263,7 +264,7 @@ export default function LoginPage() {
           </>
         )}
 
-        {/* ================= VIEW 3: RESET PASSWORD (Enter OTP & New Pass) ================= */}
+        {/* ================= VIEW 3: RESET PASSWORD ================= */}
         {view === 'RESET' && (
           <>
             <CardHeader className="text-center">
@@ -308,6 +309,24 @@ export default function LoginPage() {
                            <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input type="password" placeholder="New strong password" className="pl-9" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* ADDED CONFIRM PASSWORD FIELD */}
+                  <FormField
+                    control={resetForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                           <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" placeholder="Confirm password" className="pl-9" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />

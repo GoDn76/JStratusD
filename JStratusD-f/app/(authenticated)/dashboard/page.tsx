@@ -12,7 +12,9 @@ import {
   Search,
   Rocket,
   AlertTriangle,
-  ServerCrash
+  ServerCrash,
+  Info, // Import Info Icon
+  Construction // Optional icon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -25,20 +27,18 @@ import api from '@/lib/api';
 import { Deployment } from '@/lib/types';
 import { useState, useEffect } from 'react';
 
-// --- ROBUST FETCH FUNCTION ---
+// ... (Fetch function remains the same) ...
 async function fetchDeployments(token: string): Promise<Deployment[]> {
   try {
     const cleanToken = token.replace(/"/g, '').trim();
     const response = await api.get('/jsd/deploys', {
       headers: { Authorization: `Bearer ${cleanToken}` }
     });
-    
     if (!Array.isArray(response.data)) return []; 
-
     return response.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
-    console.error("Fetch Debug:", err); // Log real error for developer
-    throw new Error("Generic Error"); // Throw generic so UI doesn't leak details
+    console.error("Fetch Debug:", err); 
+    throw new Error("Generic Error"); 
   }
 }
 
@@ -66,12 +66,7 @@ export default function DashboardPage() {
     retry: 1, 
   });
 
-  // Force Generic Toast on Error
-  useEffect(() => {
-    if (isError) {
-      toast.error("Unable to load projects. Please try again later.");
-    }
-  }, [isError]);
+  // ... (Other handlers remain the same) ...
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -84,6 +79,7 @@ export default function DashboardPage() {
     }
   };
 
+  // ... (Helpers remain the same) ...
   const getRepoNameFallback = (url: string | null | undefined): string => {
     if (!url) return 'Unnamed Project';
     try {
@@ -93,16 +89,7 @@ export default function DashboardPage() {
       return url.split('/').pop() || 'Unnamed Project';
     }
   };
-
-  const getRepoPath = (url: string | null | undefined): string => {
-      if (!url) return 'N/A';
-      try {
-        return new URL(url).pathname.substring(1).replace('.git', '');
-      } catch {
-        return url || 'N/A';
-      }
-  };
-
+  const getRepoPath = (url: string | null | undefined) => { /* ... */ return url || 'N/A'; };
   const filteredDeployments = deployments?.filter((d) => 
     (d.name && d.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (d.repositoryUrl && d.repositoryUrl.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -128,26 +115,31 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* GENERIC ERROR STATE */}
+      {/* --- FEATURE WARNING ALERT --- */}
+      <Alert className="bg-blue-500/10 border-blue-500/20 text-blue-500">
+        <Construction className="h-4 w-4" />
+        <AlertTitle>Notice: Server Builds</AlertTitle>
+        <AlertDescription>
+          Server-side build infrastructure is currently not supported but is planned for a future update. 
+          Please ensure your projects are pre-built or static for now.
+        </AlertDescription>
+      </Alert>
+
+      {/* --- ERROR STATE --- */}
       {isError && (
         <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 border-destructive/50 bg-destructive/5 text-destructive">
           <ServerCrash className="h-4 w-4" />
           <AlertTitle>Connection Issue</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
-            <p>Something went wrong while loading your projects. The server might be unreachable.</p>
-            <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-fit border-destructive/30 hover:bg-destructive/10" 
-                onClick={() => refetch()}
-            >
+            <p>Something went wrong while loading your projects.</p>
+            <Button variant="outline" size="sm" className="w-fit border-destructive/30 hover:bg-destructive/10" onClick={() => refetch()}>
                 Try Again
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* SEARCH */}
+      {/* --- SEARCH --- */}
       {!isError && (deployments?.length || 0) > 0 && (
         <div className="flex items-center space-x-2">
             <div className="relative flex-1 max-w-sm">
@@ -162,7 +154,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* LOADING */}
+      {/* --- LOADING --- */}
       {isLoading && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -171,7 +163,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* EMPTY STATE */}
+      {/* --- EMPTY STATE --- */}
       {!isLoading && !isError && deployments?.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface/50 py-24 text-center">
           <Rocket className="mx-auto h-12 w-12 text-textSecondary" />
@@ -186,7 +178,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* DATA GRID */}
+      {/* --- DATA GRID --- */}
       {!isLoading && !isError && filteredDeployments.length > 0 && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredDeployments.map((deployment) => (

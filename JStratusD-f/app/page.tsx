@@ -23,8 +23,8 @@ const features = [
   },
   {
     icon: Clock,
-    title: "Continuous Integration",
-    description: "Automated build and deployment pipelines for a seamless and efficient workflow.",
+    title: "Fast Rebuilds",
+    description: "Experience rapid rebuilds and deployments, minimizing downtime and maximizing productivity.",
   },
   {
     icon: Shield,
@@ -75,7 +75,7 @@ export default function LandingPage() {
               Automated Deployments. <span className="text-primary">Zero Hassle.</span>
             </h1>
             <p className="text-lg sm:text-xl text-textSecondary mb-10 max-w-3xl mx-auto">
-              JStratusD is your seamless platform for continuous integration and rapid application deployment. Connect your repository and go live in seconds.
+              JStratusD is your seamless platform for fast rebuild and rapid application deployment. Connect your repository and go live in seconds.
             </p>
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>

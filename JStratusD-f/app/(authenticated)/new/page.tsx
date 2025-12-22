@@ -11,7 +11,17 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, GitBranch, Layout, Loader2, PlusCircle, Trash2, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert imports
+import { 
+  ArrowLeft, 
+  GitBranch, 
+  Layout, 
+  Loader2, 
+  PlusCircle, 
+  Trash2, 
+  RefreshCw, 
+  Info // Added Info icon
+} from 'lucide-react';
 import api from '@/lib/api';
 import { Separator } from '@/components/ui/separator';
 
@@ -155,6 +165,18 @@ export default function NewProjectPage() {
             <CardDescription>Deploy a new project from a GitHub repository.</CardDescription>
           </CardHeader>
           <CardContent>
+            
+            {/* --- ADDED WARNING ALERT --- */}
+            <Alert className="mb-6 bg-blue-500/10 border-blue-500/20 text-blue-500">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Server Builds Not Yet Supported</AlertTitle>
+                <AlertDescription>
+                    We are currently working on server-side build infrastructure. 
+                    Please note that advanced build commands may not function as expected in this version.
+                </AlertDescription>
+            </Alert>
+            {/* --------------------------- */}
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
