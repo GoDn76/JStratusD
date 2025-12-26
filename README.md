@@ -256,7 +256,7 @@ docker run --env-file .\.env --rm deploy-s
 
 ``` json
 {
-  "username": "godn",
+  "name": "godn",
   "email": "godn@example.com",
   "password": "securepassword123"
 }
@@ -284,7 +284,7 @@ docker run --env-file .\.env --rm deploy-s
 ``` json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "userId": "user-uuid-123"
+  "type": "bearer"
 }
 ```
 
@@ -301,6 +301,7 @@ docker run --env-file .\.env --rm deploy-s
 ``` json
 {
   "repoUrl": "https://github.com/godn/my-react-app.git",
+  "branch": "main",
   "secrets": {
     "REACT_APP_API_URL": "https://api.myapp.com"
   }

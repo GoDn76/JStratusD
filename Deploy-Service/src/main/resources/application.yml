@@ -38,7 +38,7 @@ eureka:
     non-secure-port-enabled: ${IS_LOCAL:true}
     secure-port-enabled: ${IS_CLOUD:false}
     secure-port: 443
-    non-secure-port: 8081
+    non-secure-port: 8082
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
 worker:
