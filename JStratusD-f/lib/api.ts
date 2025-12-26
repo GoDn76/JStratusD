@@ -9,33 +9,27 @@ const api = axios.create({
 });
 
 // 2. Add the Response Interceptor
-// This runs automatically after every response comes back from the server
 api.interceptors.response.use(
-  // If the request succeeds, just return the response
+  // A. Success Handler: Pass the response through
   (response) => response,
   
-  // If the request fails (throws an error)
+  // B. Error Handler: Check for 401s
   (error) => {
-    // Check if we have a response from the server
     if (error.response) {
       const status = error.response.status;
-      const errorData = error.response.data;
 
-      // SPECIFIC CHECK: 401 Unauthorized
-      // We check for status 401 OR the specific error message you mentioned
-      if (status === 401 || errorData?.error === "Invalid Access Token") {
+      // C. CATCH-ALL: If status is 401, force logout
+      if (status === 401) {
         
-        // Only run this logic in the browser (client-side)
+        // Only run on client-side
         if (typeof window !== 'undefined') {
-          console.warn("Session expired. Logging out...");
+          console.warn("Unauthorized (401). Logging out...");
 
-          // A. Remove the invalid tokens
+          // 1. Clear all auth data
           localStorage.removeItem('jstratusd-token');
           localStorage.removeItem('jstratusd-userId');
 
-          // B. Force redirect to login page
-          // We use window.location.href instead of router.push to ensure 
-          // the app state is completely cleared/refreshed.
+          // 2. Hard redirect to login (prevents loop if already there)
           if (window.location.pathname !== '/login') {
              window.location.href = '/login';
           }
@@ -43,8 +37,7 @@ api.interceptors.response.use(
       }
     }
 
-    // Always reject the promise so the specific component 
-    // knows something went wrong (e.g., to stop a loading spinner)
+    // Always reject so the UI knows the request failed
     return Promise.reject(error);
   }
 );
