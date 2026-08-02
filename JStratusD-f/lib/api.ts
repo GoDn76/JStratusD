@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://godn-gw.duckdns.org/';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9090';
+
+const normalizeApiUrl = (url?: string) => {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+
+  const trimmed = url.startsWith('/') ? url.slice(1) : url;
+  return trimmed.startsWith('api/') ? `/${trimmed}` : `/api/${trimmed}`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,21 +21,20 @@ const api = axios.create({
 // Automatically adds the Token to requests starting with '/jsd'
 api.interceptors.request.use(
   (config) => {
-    // Only attach tokens for specific endpoints (like your old code did)
-    // You can remove "&& config.url.startsWith('/jsd')" if you want it on ALL requests.
-    if (config.url && config.url.startsWith('/jsd')) {
+    if (config.url) {
+      config.url = normalizeApiUrl(config.url);
+    }
+
+    if (config.url && config.url.startsWith('/api/jsd')) {
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('jstratusd-token');
         const userId = localStorage.getItem('jstratusd-userId');
 
-        // Check that token is valid (not null, not "undefined" string)
         if (token && token !== 'undefined') {
-          // Remove quotes if they exist in the stored string (common issue with JSON.stringify)
           const cleanToken = token.replace(/"/g, '').trim();
           config.headers.Authorization = `Bearer ${cleanToken}`;
         }
-        
-        // Optional: Attach User ID if needed
+
         if (userId && userId !== 'undefined') {
           config.headers['X-User-Id'] = userId;
         }
@@ -49,7 +56,7 @@ api.interceptors.response.use(
       const status = error.response.status;
       
       // Check if this request was a Login attempt (we don't want to logout on a wrong password)
-      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      const isLoginRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/api/auth/login');
 
       // FORCE LOGOUT condition:
       // 1. Status is 401 (Unauthorized)

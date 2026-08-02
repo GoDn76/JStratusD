@@ -1,14 +1,16 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /workspace
+
+COPY pom.xml ./
+COPY src ./src
+RUN mvn -B -DskipTests clean package
+
 FROM eclipse-temurin:21-jre-jammy
 LABEL authors="Gaurav Urmaliya"
 
-# Install Node.js and npm
-RUN apt-get update \
-    && apt-get install -y redis-tools redis-server
-
-
 WORKDIR /app
-COPY target/*.jar app.jar
+COPY --from=build /workspace/target/*.jar /app/app.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
-EXPOSE 8080
+EXPOSE 8081

@@ -1,16 +1,24 @@
-FROM eclipse-temurin:21-jre-alpine
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /workspace
+
+COPY pom.xml ./
+COPY src ./src
+RUN mvn -B -DskipTests clean package
+
+FROM eclipse-temurin:21-jre-jammy
 LABEL authors="Gaurav Urmaliya"
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apk add --no-cache nodejs npm bash
-
-# 2. Verify installation
-RUN node -v && npm -v
+RUN node --version && npm --version
 
 WORKDIR /app
-COPY target/*.jar app.jar
+COPY --from=build /workspace/target/*.jar /app/app.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
-# Expose the port the app runs on
 EXPOSE 8082

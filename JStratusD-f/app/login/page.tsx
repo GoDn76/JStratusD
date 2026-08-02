@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { LayoutDashboard, Loader2, Lock, Mail, ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
 import api from '@/lib/api';
+import GoogleAuthButton from '@/components/google-auth-button';
 
 // --- SCHEMAS ---
 
@@ -101,6 +102,27 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       handleApiError(error, "Login failed. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/auth/login/google', { idToken: credential });
+      const token = response.data?.accessToken || response.data?.token || response.data?.jwt;
+
+      if (token) {
+        localStorage.setItem('jstratusd-token', token.replace(/"/g, ''));
+        localStorage.removeItem('jstratusd-userId');
+        toast.success('Signed in with Google successfully');
+        router.push('/dashboard');
+      } else {
+        throw new Error('No token received from Google sign-in');
+      }
+    } catch (error: any) {
+      handleApiError(error, 'Google sign-in failed.');
     } finally {
       setIsLoading(false);
     }
@@ -210,6 +232,14 @@ export default function LoginPage() {
                   </Button>
                 </form>
               </Form>
+
+              <div className="mt-6 flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">or</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <GoogleAuthButton onSuccess={handleGoogleSuccess} className="mt-4" />
 
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{' '}

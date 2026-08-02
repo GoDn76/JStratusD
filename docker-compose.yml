@@ -1,0 +1,85 @@
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: jstratusd-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    # Added memory limit to keep this queue small
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "100mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  upload-service:
+    build:
+      context: ./Upload-Service
+      dockerfile: Dockerfile
+    container_name: jstratusd-upload-service
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      SERVER_PORT: 8081
+      REDIS_PORT: 6379
+      REDIS_SSL_ENABLED: false
+      UPSTASH_REDIS_REST_HOST: redis
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA: ${EUREKA:-http://host.docker.internal:8761/eureka/}
+      CONTAINER_APP_HOSTNAME: upload-service
+      # Explicit JVM tuning for 600M limit
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+    ports:
+      - "8081:8081"
+    deploy:
+      resources:
+        limits:
+          memory: 600M
+        reservations:
+          memory: 300M
+
+  deploy-service:
+    build:
+      context: ./Deploy-Service
+      dockerfile: Dockerfile
+    container_name: jstratusd-deploy-service
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      SERVER_PORT: 8082
+      REDIS_PORT: 6379
+      REDIS_SSL_ENABLED: false
+      UPSTASH_REDIS_REST_HOST: redis
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      EUREKA: ${EUREKA:-http://host.docker.internal:8761/eureka/}
+      WORKER_WEBSITE_URL: ${WORKER_WEBSITE_URL:-http://host.docker.internal}
+      CONTAINER_APP_HOSTNAME: deploy-service
+      # Heap capped at 400m to leave ~1GB for child build processes
+      JAVA_OPTS: "-Xms256m -Xmx400m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+    ports:
+      - "8082:8082"
+    deploy:
+      resources:
+        limits:
+          memory: 1400M
+        reservations:
+          memory: 800M
+
+volumes:
+  redis-data:

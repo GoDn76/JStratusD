@@ -11,13 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Layers3, Loader2, ShieldCheck, ArrowRight, User, Mail, Lock } from 'lucide-react';
+import { Layers3, Loader2, ShieldCheck, ArrowRight, User, Mail, Lock, Phone } from 'lucide-react';
 import api from '@/lib/api';
+import GoogleAuthButton from '@/components/google-auth-button';
 
 // --- SCHEMA 1: Registration with Confirm Password ---
 const registerSchema = z.object({
   name: z.string().min(3, { message: "Username must be at least 3 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
+  phoneNumber: z.string().min(7, { message: "Phone number must be at least 7 digits." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   confirmPassword: z.string().min(1, { message: "Please confirm your password." }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -46,7 +48,7 @@ export default function RegisterPage() {
   // --- FORMS ---
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", phoneNumber: "", password: "", confirmPassword: "" },
   });
 
   const otpForm = useForm<OtpFormValues>({
@@ -88,8 +90,12 @@ export default function RegisterPage() {
     try {
       // Clean payload: Remove confirmPassword before sending to API
       const { confirmPassword, ...payload } = data;
+      const requestPayload = {
+        ...payload,
+        phoneNumber: data.phoneNumber,
+      };
 
-      await api.post('/auth/register', payload);
+      await api.post('/auth/register', requestPayload);
       
       // Save credentials for Step 2
       setTempCredentials({ email: data.email, password: data.password });
@@ -147,6 +153,27 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleSuccess = async (credential: string) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/auth/login/google', { idToken: credential });
+      const token = response.data?.accessToken || response.data?.token || response.data?.jwt;
+
+      if (token) {
+        localStorage.setItem('jstratusd-token', token.replace(/"/g, ''));
+        localStorage.removeItem('jstratusd-userId');
+        toast.success('Signed up with Google successfully');
+        router.push('/dashboard');
+      } else {
+        throw new Error('No token received from Google sign-in');
+      }
+    } catch (error: any) {
+      handleError(error, 'Google sign-in failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-grid-small-white/[0.2] p-4">
       <Card className="w-full max-w-md bg-background/80 backdrop-blur-sm">
@@ -198,6 +225,22 @@ export default function RegisterPage() {
                   />
                   <FormField
                     control={registerForm.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="+1234567890" className="pl-9" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -236,6 +279,15 @@ export default function RegisterPage() {
                   </Button>
                 </form>
               </Form>
+
+              <div className="mt-6 flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">or</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <GoogleAuthButton onSuccess={handleGoogleSuccess} className="mt-4" label="Continue with Google" />
+
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 Already have an account?{' '}
                 <Link href="/login" className="font-medium text-primary hover:underline">

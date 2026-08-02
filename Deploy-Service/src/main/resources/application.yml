@@ -24,14 +24,14 @@ spring:
     redis:
       host: ${UPSTASH_REDIS_REST_HOST:host.docker.internal}
       port: ${REDIS_PORT:6379}
-      password: ${UPSTASH_REDIS_REST_TOKEN}
+      password: ${UPSTASH_REDIS_REST_TOKEN:}
       ssl:
-        enabled: true # Crucial for Upstash!
+        enabled: ${REDIS_SSL_ENABLED:false}
 
 eureka:
   client:
     service-url:
-      defaultZone: http://godn-gw.duckdns.org:8761/eureka/
+      defaultZone: ${EUREKA:http://localhost:8761/eureka/}
   instance:
     hostname: ${CONTAINER_APP_HOSTNAME:localhost}
     # If on Azure (variable exists), use HTTPS/443. If local, use HTTP/8080.
