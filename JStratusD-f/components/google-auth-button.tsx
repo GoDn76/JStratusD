@@ -39,7 +39,7 @@ export default function GoogleAuthButton({
   const [isLoading, setIsLoading] = useState(false);
 
   const clientId =
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+    process.env.PUBLIC_GOOGLE_CLIENT_ID ||
     process.env.GOOGLE_CLIENT_ID ||
     '636328991496-maiqkin3mfmq77m9o67v1ges4mmgeij8.apps.googleusercontent.com';
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9090';
+const API_BASE_URL = process.env.PUBLIC_API_BASE_URL || 'http://localhost:9090';
 
 const normalizeApiUrl = (url?: string) => {
   if (!url) return url;
