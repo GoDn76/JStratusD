@@ -29,8 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-const BASE_DOMAIN = 'jstratusd.duckdns.org';
-const BASE_URL = `https://${BASE_DOMAIN}`;
+const BASE_URL = (process.env.NEXT_PUBLIC_DEPLOYMENT_BASE_URL || process.env.PUBLIC_DEPLOYMENT_BASE_URL || 'https://jstratusd.duckdns.org').replace(/\/$/, '');
 
 async function fetchDeployment(id: string, token: string): Promise<Deployment> {
   try {
@@ -47,7 +46,8 @@ async function fetchDeployment(id: string, token: string): Promise<Deployment> {
 }
 
 const getPublicUrl = (deploymentId: string) => {
-    return `${BASE_URL}/${deploymentId}`;
+    const normalizedBase = BASE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return `https://${deploymentId}.${normalizedBase}`;
 }
 
 function ProjectDetailsContent() {
