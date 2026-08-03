@@ -1,7 +1,7 @@
 package org.godn.uploadservice.util;
 
 public class GenerateId {
-    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
     private static final int ID_LENGTH = 5;
 
     public static String create() {
