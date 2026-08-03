@@ -1,13 +1,22 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.PUBLIC_API_BASE_URL || 'http://localhost:9090';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.PUBLIC_API_BASE_URL || '';
 
 const normalizeApiUrl = (url?: string) => {
   if (!url) return url;
   if (/^https?:\/\//i.test(url)) return url;
 
   const trimmed = url.startsWith('/') ? url.slice(1) : url;
-  return trimmed.startsWith('api/') ? `/${trimmed}` : `/api/${trimmed}`;
+
+  if (trimmed.startsWith('api/')) {
+    return `/${trimmed}`;
+  }
+
+  if (trimmed.startsWith('jsd/')) {
+    return `/api/${trimmed}`;
+  }
+
+  return `/api/${trimmed}`;
 };
 
 const api = axios.create({
