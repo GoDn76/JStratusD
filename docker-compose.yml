@@ -5,14 +5,24 @@ services:
     restart: unless-stopped
     ports:
       - "6380:6379"
-    # Added memory limit to keep this queue small
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "100mb", "--maxmemory-policy", "noeviction"]
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--maxmemory",
+        "100mb",
+        "--maxmemory-policy",
+        "noeviction"
+      ]
     volumes:
       - redis-data:/data
     deploy:
       resources:
         limits:
           memory: 150M
+    networks:
+      - default
 
   upload-service:
     build:
@@ -24,28 +34,37 @@ services:
       - ./.env
     environment:
       SERVER_PORT: 8081
+
       REDIS_PORT: 6379
       REDIS_SSL_ENABLED: false
       UPSTASH_REDIS_REST_HOST: redis
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      EUREKA: ${EUREKA:-http://host.docker.internal:8761/eureka/}
-      CONTAINER_APP_HOSTNAME: host.docker.internal
-      # Explicit JVM tuning for 600M limit
+
+      EUREKA: http://service-discovery:8761/eureka/
+
+      CONTAINER_APP_HOSTNAME: upload-service
+
       JAVA_OPTS: "-Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
     depends_on:
       - redis
+
     ports:
       - "8081:8081"
+
     deploy:
       resources:
         limits:
           memory: 600M
         reservations:
           memory: 300M
+
+    networks:
+      - default
+      - gateway-network
 
   deploy-service:
     build:
@@ -57,22 +76,29 @@ services:
       - ./.env
     environment:
       SERVER_PORT: 8082
+
       REDIS_PORT: 6379
       REDIS_SSL_ENABLED: false
       UPSTASH_REDIS_REST_HOST: redis
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      EUREKA: ${EUREKA:-http://host.docker.internal:8761/eureka/}
-      WORKER_WEBSITE_URL: ${WORKER_WEBSITE_URL:-http://host.docker.internal}
+
+      EUREKA: http://service-discovery:8761/eureka/
+
+      WORKER_WEBSITE_URL: http://deploy-service
+
       CONTAINER_APP_HOSTNAME: deploy-service
+
       JAVA_OPTS: "-Xms256m -Xmx400m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
     depends_on:
       - redis
+
     ports:
       - "8082:8082"
+
     deploy:
       resources:
         limits:
@@ -80,5 +106,14 @@ services:
         reservations:
           memory: 800M
 
+    networks:
+      - default
+      - gateway-network
+
 volumes:
   redis-data:
+
+networks:
+  gateway-network:
+    external: true
+    name: gateway-discovery-auth_symptom-network
