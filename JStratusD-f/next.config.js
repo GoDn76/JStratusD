@@ -1,6 +1,27 @@
 /** @type {import('next').NextConfig} */
-const apiTarget = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.PUBLIC_API_BASE_URL || 'http://localhost:9090';
-const deploymentBaseUrl = process.env.NEXT_PUBLIC_DEPLOYMENT_BASE_URL || process.env.PUBLIC_DEPLOYMENT_BASE_URL || 'https://jstratusd.de5.net';
+const normalizeExternalUrl = (value, fallback) => {
+  if (!value) return fallback;
+
+  let normalized = String(value).trim();
+  if (!normalized) return fallback;
+
+  if (normalized.startsWith('https//')) {
+    normalized = `https://${normalized.slice('https//'.length)}`;
+  } else if (normalized.startsWith('http//')) {
+    normalized = `http://${normalized.slice('http//'.length)}`;
+  } else if (normalized.startsWith('https:/') && !normalized.startsWith('https://')) {
+    normalized = `https://${normalized.slice('https:/'.length)}`;
+  } else if (normalized.startsWith('http:/') && !normalized.startsWith('http://')) {
+    normalized = `http://${normalized.slice('http:/'.length)}`;
+  } else if (!/^https?:\/\//i.test(normalized)) {
+    normalized = `https://${normalized}`;
+  }
+
+  return normalized.replace(/\/$/, '');
+};
+
+const apiTarget = normalizeExternalUrl(process.env.NEXT_PUBLIC_API_BASE_URL || process.env.PUBLIC_API_BASE_URL, 'http://localhost:9090');
+const deploymentBaseUrl = normalizeExternalUrl(process.env.NEXT_PUBLIC_DEPLOYMENT_BASE_URL || process.env.PUBLIC_DEPLOYMENT_BASE_URL, 'https://jstratusd.de5.net');
 
 const nextConfig = {
   // output: 'export',  <-- DELETE or COMMENT THIS LINE
